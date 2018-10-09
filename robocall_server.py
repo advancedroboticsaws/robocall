@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # coding=utf-8
 #from __future__ import print_function
+
+import threading
 import cherrypy
 import urllib
 import requests
@@ -19,6 +21,128 @@ ROBOCALL_LOG = '/home/advrobot/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.65.100'
 ROBOCALL_IP = '192.168.30.62'
+
+# For Office
+ext_front_code = ''
+# For Shang_Hai
+# ext_front_code = '6'
+# For Bei Jing
+# ext_front_code = '8'
+
+
+def delivery_call(user_pick_up, roomId, pw):
+    loop_count = 0
+    while loop_count < 3:
+        if not user_pick_up:
+            p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+            p.stdin.write('dialplan set global pw ' + pw + '\n')
+            ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                  + ' extension 100@from-internal\n'
+            # test in office
+            # ss0 = 'channel originate DAHDI/1/14'+' extension 100@from-internal\n'
+            print(ss0)
+            p.stdin.write(ss0)
+            while True:
+                line = p.stdout.readline()
+                if re.search("Hungup", line) is None:
+                    print(line.rstrip())
+                    if bool(re.search("NOTICE", line)):
+                        print "Wait for dahdi channel resource!"
+                        time.sleep(10)
+                        break
+                    elif bool(re.search("KKUEI ext0", line)):
+                        user_pick_up = True
+                else:  # print "Hungup"
+                    time.sleep(5)
+                    if not user_pick_up:
+                        print "Hangup but not pressing 0... back to loop"
+                    loop_count += 1
+                    break
+        elif user_pick_up:
+            print "user_picp_up == True"
+            break
+        else:
+            pass
+
+    if user_pick_up:
+        print "Status: Completed"
+        return "Status: Completed"
+
+    elif not user_pick_up:
+        print("request push notification!")
+
+        # push notification
+        s = requests.Session()
+        a = {'msg': '机器人送行李到' + str(roomId) + '却无人接听'}
+        announceMsg1 = urllib.urlencode(a)
+        uri = str('http://' + ROBOCALL_IP + ':8080/push?' + announceMsg1)
+
+        try:
+            r = s.get(uri)
+        except:
+            print("[robocall] push notification failure")
+
+        return "Status: Expired"
+
+
+def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
+
+    ext = str(ext)
+    currentRoomId = str(currentRoomId).zfill(4)
+    targetRoomId = str(targetRoomId).zfill(4)
+
+    ss0 = 'ext: ' + ext + ' currentRoomId: ' + currentRoomId + ' targetRoomId:' + targetRoomId
+    print(ss0)
+
+    loop_count = 0
+
+    while loop_count < 3:
+        if not user_pick_up:
+            p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+            p.stdin.write('dialplan set global ext ' + ext + '\n')
+            p.stdin.write('dialplan set global currentRoomId ' + currentRoomId + '\n')
+            p.stdin.write('dialplan set global targetRoomId ' + targetRoomId + '\n')
+
+            # generate call
+
+            # for testing purpose in office, ext=32
+            # ext = str(32)
+
+            ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + ext + ' extension 200@from-internal\n'
+            p.stdin.write(ss0)
+
+            while True:
+                line = p.stdout.readline()
+                if re.search("Hungup", line) is None:
+                    print(line.rstrip())
+                    if bool(re.search("NOTICE", line)):
+                        print "Wait for dahdi channel resource!"
+                        time.sleep(10)
+                        break
+                    elif bool(re.search("KKUEI ext1", line)):
+                        user_pick_up = True
+                else:  # Hungup
+                    time.sleep(5)
+                    if not user_pick_up:
+                        print "Hangup but not pressing 1... back to loop"
+                    loop_count += 1
+                    break
+
+        elif user_pick_up:
+            print "user_picp_up == True"
+            break
+        else:
+            pass
+
+    p.stdin.close()
+    p.stdout.close()
+
+    if user_pick_up == True:
+        return "Status: Completed"
+    elif user_pick_up == False:
+        print("request push notification!")
+        return "Status: Expired"
+
 
 class robocall_server(object):
     push_token=[]
@@ -53,141 +177,27 @@ class robocall_server(object):
 
     @cherrypy.expose
     def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
-
-        ext = str(ext)
-        currentRoomId = str(currentRoomId).zfill(4)
-        targetRoomId  = str(targetRoomId).zfill(4)
-
-        ss0 = 'ext: ' + ext + ' currentRoomId: ' + currentRoomId + ' targetRoomId:' + targetRoomId
-        print(ss0)
-
         user_pick_up = False
-        loop_count = 0
-
         # uncomment this line to ignore making calls for testing purposes
         # user_pick_up = True
 
-        while loop_count<3:
-            if not user_pick_up:
-                p = subprocess.Popen('asterisk -rvvvvv',shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                p.stdin.write('dialplan set global ext '+ext+'\n')
-                p.stdin.write('dialplan set global currentRoomId '+currentRoomId+'\n')
-                p.stdin.write('dialplan set global targetRoomId '+targetRoomId+'\n')
+        call_thread = threading.Thread(remove_call(user_pick_up, ext, currentRoomId, targetRoomId))
+        call_thread.start()
 
-                # generate call
-
-                # for testing purpose in office, ext=32
-                # ext = str(32)
-
-                ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
-                p.stdin.write(ss0)
-
-                while True:
-                    line = p.stdout.readline()
-                    if re.search("Hungup",line) is None:
-                        print(line.rstrip())
-                        if bool(re.search("NOTICE",line)):
-                            print "Wait for dahdi channel resource!"
-                            time.sleep(10)
-                            break
-                        elif bool(re.search("KKUEI ext1",line)):
-                            user_pick_up = True
-                    else:       # Hungup
-                        time.sleep(5)
-                        if not user_pick_up:
-                            print "Hangup but not pressing 1... back to loop"
-                        loop_count += 1
-                        break
-
-            elif user_pick_up:
-                print "user_picp_up == True"
-                break
-            else:
-                pass
-
-        p.stdin.close()
-        p.stdout.close()
-
-        if user_pick_up == True:
-            return "Status: Completed"
-        elif user_pick_up == False:
-            print("request push notification!")
-            return "Status: Expired"
-
+        return "robocall_received_remove_task"
 
     @cherrypy.expose
     def robocall(self, roomId=0, pw=1234):
-        roomIdSet = set([
-            '100',
-            '201','202','203','204','205','206','207','208','209','210','211','212','213',
-            '301','302','303','304','305','306','307','308','309','310','311','312','313','314','315','316','317','318','319','320','321','322',
-            '401','402','403','404','405','406','407','408','409','410','411','412','413','414','415','416','417','418','419','420','421','422',
-            '501','502','503','504','505','506','507','508','509','510','511','512','513','514','515','516','517','518','519','520','521','522',
-            '601','602','603','604','605','606','607','608','609','610','611','612','613','614','615','616','617','618','619','620','621','622',
-            '701','702','703','704','705','706','707','708','709','710','711','712','713','714','715','716','717','718','719','720','721','722',
-            '801','802','803','804','805','806','807','808','809','810','811','812','813','814','815','816','817','818','819','820','821','822'
-            ])
-
-        if str(roomId) not in roomIdSet:
-            return "Status: Invalid roomId"
-
         user_pick_up = False
-        loop_count = 0
-        
+
         # uncomment this line to ignore making calls for testing purposes
         # user_pick_up = True
 
-        while loop_count<3:
-            if not user_pick_up:
-                p = subprocess.Popen('asterisk -rvvvvv',shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                p.stdin.write('dialplan set global pw '+pw+'\n')
-                ss0 = 'channel originate DAHDI/1/6'+str(int(roomId))+' extension 100@from-internal\n'
-                # test in office
-                # ss0 = 'channel originate DAHDI/1/14'+' extension 100@from-internal\n'
-                print(ss0)
-                p.stdin.write(ss0)
-                while True:
-                    line = p.stdout.readline()
-                    if re.search("Hungup",line) is None:
-                        print(line.rstrip())
-                        if bool(re.search("NOTICE",line)):
-                            print "Wait for dahdi channel resource!"
-                            time.sleep(10)
-                            break
-                        elif bool(re.search("KKUEI ext0",line)):
-                            user_pick_up = True
-                    else:       # print "Hungup"
-                        time.sleep(5)
-                        if not user_pick_up:
-                            print "Hangup but not pressing 0... back to loop"
-                        loop_count += 1
-                        break
-            elif user_pick_up:
-                print "user_picp_up == True"
-                break
-            else:
-                pass
+        call_thread = threading.Thread(delivery_call(user_pick_up, roomId, pw))
+        call_thread.start()
 
-        if user_pick_up == True:
-            return "Status: Completed"
-        elif user_pick_up == False:
-            print("request push notification!")
+        return "robocall_received_inform_task"
 
-            # push notification
-            s = requests.Session()
-            a={ 'msg': '机器人送行李到'+str(roomId)+'却无人接听' }
-            announceMsg1 = urllib.urlencode(a)
-            uri = str('http://' + ROBOCALL_IP + ':8080/push?' + announceMsg1)
-    
-            try:
-                r = s.get(uri)
-            except:
-                print("[robocall] push notification failure")
-
-            return "Status: Expired"
-
-        return str(value)
-        #return "robocall with roomId = " + str(int(roomId))
 
 if __name__ == '__main__':
     cherrypy.server.socket_host = '0.0.0.0'
