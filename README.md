@@ -111,6 +111,20 @@ Please follow the procedure to install asterisk server & dahdi driver.
         // roomId = room id to call
 
 
+4) Test remove_car_req (call to front-desk and request to remove the car)
+   Run the robocall function.
+
+        sudo python ./robocall_server.py
+
+   Use brower to send the http request.
+
+        http://192.168.30.222:8080/remove_car_req?ext=100&currentRoomId=0503&targetRoomId=0510
+
+        // Please replace the IP address
+        // ext = extension of the front-desk
+        // currentRoomId = the nearest room id of the current robot pose
+        // targetRoomId  = the target room id
+
 ### Add the robocall into startup script.
  Add following line into **/etc/rc.local**
  > /usr/bin/python /home/advrobot/robocall/robocall_server.py

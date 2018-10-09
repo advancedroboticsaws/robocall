@@ -17,8 +17,8 @@ sys.setdefaultencoding('utf-8')
 ROBOCALL_LOG = '/home/advrobot/robocall_server.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
-ROBOCALL_IP = '192.168.65.100'
-# ROBOCALL_IP = '192.168.30.59'
+# ROBOCALL_IP = '192.168.65.100'
+ROBOCALL_IP = '192.168.30.62'
 
 class robocall_server(object):
     push_token=[]
@@ -52,6 +52,70 @@ class robocall_server(object):
         logging.info(msg)
 
     @cherrypy.expose
+    def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
+
+        ext = str(ext)
+        currentRoomId = str(currentRoomId).zfill(4)
+        targetRoomId  = str(targetRoomId).zfill(4)
+
+        ss0 = 'ext: ' + ext + ' currentRoomId: ' + currentRoomId + ' targetRoomId:' + targetRoomId
+        print(ss0)
+
+        user_pick_up = False
+        loop_count = 0
+
+        # uncomment this line to ignore making calls for testing purposes
+        # user_pick_up = True
+
+        while loop_count<3:
+            if not user_pick_up:
+                p = subprocess.Popen('asterisk -rvvvvv',shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+                p.stdin.write('dialplan set global ext '+ext+'\n')
+                p.stdin.write('dialplan set global currentRoomId '+currentRoomId+'\n')
+                p.stdin.write('dialplan set global targetRoomId '+targetRoomId+'\n')
+
+                # generate call
+
+                # for testing purpose in office, ext=32
+                ext = str(32)
+
+                ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
+                p.stdin.write(ss0)
+
+                while True:
+                    line = p.stdout.readline()
+                    if re.search("Hungup",line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE",line)):
+                            print "Wait for dahdi channel resource!"
+                            time.sleep(10)
+                            break
+                        elif bool(re.search("KKUEI ext1",line)):
+                            user_pick_up = True
+                    else:       # Hungup
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "Hangup but not pressing 1... back to loop"
+                        loop_count += 1
+                        break
+
+            elif user_pick_up:
+                print "user_picp_up == True"
+                break
+            else:
+                pass
+
+        p.stdin.close()
+        p.stdout.close()
+
+        if user_pick_up == True:
+            return "Status: Completed"
+        elif user_pick_up == False:
+            print("request push notification!")
+            return "Status: Expired"
+
+
+    @cherrypy.expose
     def robocall(self, roomId=0, pw=1234):
         roomIdSet = set([
             '100',
@@ -78,6 +142,8 @@ class robocall_server(object):
                 p = subprocess.Popen('asterisk -rvvvvv',shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
                 p.stdin.write('dialplan set global pw '+pw+'\n')
                 ss0 = 'channel originate DAHDI/1/6'+str(int(roomId))+' extension 100@from-internal\n'
+                # test in office
+                # ss0 = 'channel originate DAHDI/1/14'+' extension 100@from-internal\n'
                 print(ss0)
                 p.stdin.write(ss0)
                 while True:
