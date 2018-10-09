@@ -77,7 +77,7 @@ class robocall_server(object):
                 # generate call
 
                 # for testing purpose in office, ext=32
-                ext = str(32)
+                # ext = str(32)
 
                 ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
                 p.stdin.write(ss0)
