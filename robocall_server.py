@@ -49,7 +49,7 @@ def delivery_call(user_pick_up, roomId, pw):
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
             p.stdin.write('dialplan set global pw ' + pw + '\n')
             # for testing purpose in office, ext=21
-            # ext = str(21)
+            ext = str(21)
 
             ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
                   + ' extension 100@from-internal\n'
@@ -120,7 +120,7 @@ def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
             # generate call
 
             # for testing purpose in office, ext=21
-            # ext = str(21)
+            ext = str(21)
 
             ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
             p.stdin.write(ss0)
