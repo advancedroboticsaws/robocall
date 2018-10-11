@@ -86,7 +86,7 @@ def delivery_call(user_pick_up, roomId, pw):
 
 
 def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
-
+    print(">>>>>>>>>>>>>>>>>>> remove_call start.")
     ext = str(ext)
     currentRoomId = str(currentRoomId).zfill(4)
     targetRoomId = str(targetRoomId).zfill(4)
@@ -181,9 +181,9 @@ class robocall_server(object):
         # uncomment this line to ignore making calls for testing purposes
         # user_pick_up = True
 
-        call_thread = threading.Thread(remove_call(user_pick_up, ext, currentRoomId, targetRoomId))
+        call_thread = threading.Thread(target=remove_call, args=(user_pick_up, ext, currentRoomId, targetRoomId,))
         call_thread.start()
-
+	print("robocall_received_remove_task")
         return "robocall_received_remove_task"
 
     @cherrypy.expose
@@ -193,9 +193,9 @@ class robocall_server(object):
         # uncomment this line to ignore making calls for testing purposes
         # user_pick_up = True
 
-        call_thread = threading.Thread(delivery_call(user_pick_up, roomId, pw))
+        call_thread = threading.Thread(target=delivery_call, args=(user_pick_up, roomId, pw))
         call_thread.start()
-
+	print("robocall_received_inform_task")
         return "robocall_received_inform_task"
 
 
