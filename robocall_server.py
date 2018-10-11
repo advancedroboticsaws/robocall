@@ -8,10 +8,16 @@ import urllib
 import requests
 import os
 import os.path
-import sys,time,subprocess,re
+import sys, subprocess, re
 import logging
 from subprocess import Popen, PIPE, STDOUT
 from pushy import PushyAPI
+from json import loads
+import sqlite3
+import atexit
+import time, datetime
+import collections
+import paho.mqtt.client as mqtt
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -19,8 +25,10 @@ sys.setdefaultencoding('utf-8')
 ROBOCALL_LOG = '/home/advrobot/robocall_server.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
-# ROBOCALL_IP = '192.168.65.100'
+# ROBOCALL_IP = '192.168.30.132'
 ROBOCALL_IP = '192.168.30.62'
+
+sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
 # For Office
 ext_front_code = ''
@@ -28,6 +36,10 @@ ext_front_code = ''
 # ext_front_code = '6'
 # For Bei Jing
 # ext_front_code = '8'
+
+
+c = None
+conn = None
 
 
 def delivery_call(user_pick_up, roomId, pw):
@@ -110,7 +122,7 @@ def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
             # for testing purpose in office, ext=21
             # ext = str(21)
 
-            ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + ext + ' extension 200@from-internal\n'
+            ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
             p.stdin.write(ss0)
 
             while True:
@@ -185,7 +197,7 @@ class robocall_server(object):
 
         call_thread = threading.Thread(target=remove_call, args=(user_pick_up, ext, currentRoomId, targetRoomId,))
         call_thread.start()
-	print("robocall_received_remove_task")
+        print("robocall_received_remove_task")
         return "robocall_received_remove_task"
 
     @cherrypy.expose
@@ -197,11 +209,81 @@ class robocall_server(object):
 
         call_thread = threading.Thread(target=delivery_call, args=(user_pick_up, roomId, pw))
         call_thread.start()
-	print("robocall_received_inform_task")
+        print("robocall_received_inform_task")
         return "robocall_received_inform_task"
 
 
+# =================== MQTT =====================
+def convert(data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(convert, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(convert, data))
+    else:
+        return data
+
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code "+str(rc))
+    client.subscribe("/amr_status_agent", qos=2)
+
+
+def on_message(client, userdata, msg):
+
+    amr_status_dict = convert(loads(msg.payload))
+    print(amr_status_dict)
+    ts = time.time()
+    now = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
+    item = (now, amr_status_dict['ts_start'], amr_status_dict['status'],
+            amr_status_dict['mission'], amr_status_dict['task_position'], amr_status_dict['closet_position'],
+            amr_status_dict['capacity'],
+            amr_status_dict['EV_abort'], amr_status_dict['EV_entering_abort'], amr_status_dict['mb_abort'],
+            amr_status_dict['mb_abort_counter'])
+
+    c.execute('insert into amr_status_db values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', item)
+    conn.commit()
+
+
+def exit_handler():
+    c.close()
+    conn.close()
+    print 'My application is ending!'
+
+
+def mqtt_listener():
+    global c, conn
+    print('System Start up')
+    # MQTT listener
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(ROBOCALL_IP, 1883, 60)
+    conn = sqlite3.connect(sqlite_file)
+    c = conn.cursor()
+    # name of the table to be created
+    table_name1 = 'amr_status_db'
+
+    # Connecting to the database file
+    conn = sqlite3.connect(sqlite_file)
+    c = conn.cursor()
+
+    # Creating a new SQLite table
+    c.executescript("""CREATE TABLE IF NOT EXISTS amr_status_db(tid REAL, ts_start REAL, amr_status TEXT,
+                     mission TEXT, task_position TEXT, closet_position TEXT,
+                     capacity REAL,
+                     EV_abort INTEGER, EV_entering_abort INTEGER, mb_abort INTEGER,
+                     mb_abort_counter INTEGER);""")
+    atexit.register(exit_handler)
+    client.loop_forever()
+
 if __name__ == '__main__':
+
+    mqtt_logging_thread = threading.Thread(target=mqtt_listener)
+    mqtt_logging_thread.start()
+
+    # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
     cherrypy.quickstart(robocall_server())
