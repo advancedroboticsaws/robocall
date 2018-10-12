@@ -21,8 +21,9 @@ import paho.mqtt.client as mqtt
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-
-ROBOCALL_LOG = '/home/advrobot/robocall_server.log'
+ts = time.time()
+st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
@@ -31,11 +32,11 @@ ROBOCALL_IP = '192.168.30.62'
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
 # For Office
-ext_front_code = ''
+# ext_front_code = ''
 # For Shang_Hai
 # ext_front_code = '6'
 # For Bei Jing
-# ext_front_code = '8'
+ext_front_code = '8'
 
 
 c = None
@@ -48,8 +49,10 @@ def delivery_call(user_pick_up, roomId, pw):
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
             p.stdin.write('dialplan set global pw ' + pw + '\n')
-            # for testing purpose in office, ext=21
-            ext = str(21)
+            
+
+            # for testing roomId=141
+            roomId = str(141)
 
             ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
                   + ' extension 100@from-internal\n'
@@ -120,7 +123,7 @@ def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
             # generate call
 
             # for testing purpose in office, ext=21
-            ext = str(21)
+            # ext = str(0)
 
             ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
             p.stdin.write(ss0)
@@ -192,8 +195,9 @@ class robocall_server(object):
     @cherrypy.expose
     def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
         user_pick_up = False
+        
         # uncomment this line to ignore making calls for testing purposes
-        # user_pick_up = True
+        user_pick_up = True
 
         call_thread = threading.Thread(target=remove_call, args=(user_pick_up, ext, currentRoomId, targetRoomId,))
         call_thread.start()
@@ -205,7 +209,7 @@ class robocall_server(object):
         user_pick_up = False
 
         # uncomment this line to ignore making calls for testing purposes
-        # user_pick_up = True
+        user_pick_up = True
 
         call_thread = threading.Thread(target=delivery_call, args=(user_pick_up, roomId, pw))
         call_thread.start()
