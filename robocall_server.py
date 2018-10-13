@@ -43,6 +43,13 @@ c = None
 conn = None
 
 
+def robocall_reboot():
+    time.sleep(3.0)
+    os.system('sync;sync;')
+    # Reboot
+    os.system('echo "advrobot" | sudo -S reboot')
+
+
 def delivery_call(user_pick_up, roomId, pw):
     loop_count = 0
     while loop_count < 3:
@@ -219,6 +226,16 @@ class robocall_server(object):
         print("robocall_received_inform_task")
         return "robocall_received_inform_task"
 
+    @cherrypy.expose
+    def reboot(self, robot_id=0, tid=0, pw=0):
+        # Reboot robocall by AMR.
+        if pw == 'robocall_server':
+            reboot_thread = threading.Thread(target=robocall_reboot)
+            reboot_thread.start()
+            return 'OK'
+        else:
+            return "Wrong password, permission denied."
+
 
 # =================== MQTT =====================
 def convert(data):
@@ -290,6 +307,7 @@ if __name__ == '__main__':
     mqtt_logging_thread = threading.Thread(target=mqtt_listener)
     mqtt_logging_thread.start()
 
+    robocall_reboot()
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
