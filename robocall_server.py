@@ -22,12 +22,12 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 ts = time.time()
-st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
 ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.30.62'
+ROBOCALL_IP = '192.168.64.10'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
@@ -104,6 +104,7 @@ def delivery_call(user_pick_up, roomId, pw):
 
 def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
     print(">>>>>>>>>>>>>>>>>>> remove_call start.")
+    ext = str(8141)
     ext = str(ext)
     currentRoomId = str(currentRoomId).zfill(4)
     targetRoomId = str(targetRoomId).zfill(4)
@@ -123,9 +124,11 @@ def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
             # generate call
 
             # for testing purpose in office, ext=21
-            # ext = str(0)
+            ext = str(8141)
 
             ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
+            print("==========================")
+            print(ss0)
             p.stdin.write(ss0)
 
             while True:
