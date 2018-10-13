@@ -230,6 +230,7 @@ class robocall_server(object):
     def reboot(self, robot_id=0, tid=0, pw=0):
         # Reboot robocall by AMR.
         if pw == 'robocall_server':
+            print("robocall reboot.")
             reboot_thread = threading.Thread(target=robocall_reboot)
             reboot_thread.start()
             return 'OK'
@@ -307,7 +308,6 @@ if __name__ == '__main__':
     mqtt_logging_thread = threading.Thread(target=mqtt_listener)
     mqtt_logging_thread.start()
 
-    robocall_reboot()
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
