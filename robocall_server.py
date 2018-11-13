@@ -36,7 +36,7 @@ sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 # For Shang_Hai
 # ext_front_code = '6'
 # For Bei Jing
-ext_front_code = '8'
+ext_front_code = ''
 
 
 c = None
@@ -47,11 +47,13 @@ def robocall_reboot():
     time.sleep(3.0)
     os.system('sync;sync;')
     # Reboot
-    os.system('echo "advrobot" | sudo -S reboot')
+    os.system('echo "@Advrobot" | sudo -S reboot')
 
 
 def delivery_call(user_pick_up, roomId, pw):
     loop_count = 0
+    # ignore calling
+    user_pick_up = True
     while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
@@ -59,7 +61,7 @@ def delivery_call(user_pick_up, roomId, pw):
             
 
             # for testing roomId=141
-            roomId = str(141)
+            # roomId = str(141)
 
             ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
                   + ' extension 100@from-internal\n'
@@ -111,7 +113,8 @@ def delivery_call(user_pick_up, roomId, pw):
 
 def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
     print(">>>>>>>>>>>>>>>>>>> remove_call start.")
-    ext = str(8141)
+    # for testing purpose in office, ext=21
+    # ext = str(8141)
     ext = str(ext)
     currentRoomId = str(currentRoomId).zfill(4)
     targetRoomId = str(targetRoomId).zfill(4)
@@ -129,10 +132,6 @@ def remove_call(user_pick_up, ext, currentRoomId, targetRoomId):
             p.stdin.write('dialplan set global targetRoomId ' + targetRoomId + '\n')
 
             # generate call
-
-            # for testing purpose in office, ext=21
-            ext = str(8141)
-
             ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
             print("==========================")
             print(ss0)
@@ -207,7 +206,7 @@ class robocall_server(object):
         user_pick_up = False
         
         # uncomment this line to ignore making calls for testing purposes
-        user_pick_up = True
+        # user_pick_up = True
 
         call_thread = threading.Thread(target=remove_call, args=(user_pick_up, ext, currentRoomId, targetRoomId,))
         call_thread.start()
@@ -219,7 +218,7 @@ class robocall_server(object):
         user_pick_up = False
 
         # uncomment this line to ignore making calls for testing purposes
-        user_pick_up = True
+        # user_pick_up = True
 
         call_thread = threading.Thread(target=delivery_call, args=(user_pick_up, roomId, pw))
         call_thread.start()
