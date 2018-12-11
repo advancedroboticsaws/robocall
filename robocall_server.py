@@ -52,8 +52,7 @@ def robocall_reboot():
 
 def delivery_call(user_pick_up, roomId, pw):
     loop_count = 0
-    # ignore calling
-    user_pick_up = True
+
     while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
