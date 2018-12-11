@@ -34,9 +34,9 @@ sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 # For Office
 # ext_front_code = ''
 # For Shang_Hai
-# ext_front_code = '6'
+ext_front_code = '6'
 # For Bei Jing
-ext_front_code = ''
+# ext_front_code = ''
 
 
 c = None
