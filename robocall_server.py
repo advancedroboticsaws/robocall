@@ -27,7 +27,7 @@ ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.64.10'
+ROBOCALL_IP = '192.168.65.100'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
