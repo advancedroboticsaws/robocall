@@ -38,6 +38,7 @@ sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 # For Bei Jing
 ext_front_code = '32'
 
+
 # Jason phone
 Jason_phone = '0958331981'
 # Jimmy phone
@@ -58,18 +59,34 @@ def robocall_reboot():
 
 def delivery_call(rid ,user_pick_up, roomId, pw):
     loop_count = 0
+    robotExitString = ""
+    robotId = str(rid)
     
     while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-            p.stdin.write('dialplan set global pw ' + pw + '\n')
-            
 
+
+            if rid == "001":
+                print("try to dial from port 1")
+                p.stdin.write('dialplan set global pw1 ' + pw + '\n')
+                #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                #      + ' extension 100@context_001\n'
+                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + str(int(roomId))\
+                  + ' extension 100@context_001\n'
+                robotExitString = "Robot1 pickup"
+            elif rid == "002":
+                print("try to dial from port 2")
+                p.stdin.write('dialplan set global pw2 ' + pw + '\n')
+                #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
+                #      + ' extension 100@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + str(int(roomId))\
+                  + ' extension 100@context_002\n'
+                robotExitString = "Robot2 pickup"
+
+                        
             # for testing roomId=141
-            # roomId = str(141)
-
-            ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
-                  + ' extension 100@from-internal\n'
+            # roomId = str(141)            
             
             print(ss0)
             p.stdin.write(ss0)
@@ -81,8 +98,9 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                         print "Wait for dahdi channel resource!"
                         time.sleep(10)
                         break
-                    elif bool(re.search("KKUEI ext0", line)):
+                    elif bool(re.search( robotExitString , line)):
                         user_pick_up = True
+                        print("find pickup msg!!!: "+robotExitString)
                 else:  # print "Hungup"
                     time.sleep(5)
                     if not user_pick_up:
@@ -120,7 +138,10 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
     print(">>>>>>>>>>>>>>>>>>> remove_call start.")
     # for testing purpose in office, ext=21
     # ext = str(8141)
+    
     ext = str(ext)
+    robotId = str(rid)
+    robotExitString = ""
     currentRoomId = str(currentRoomId).zfill(4)
     targetRoomId = str(targetRoomId).zfill(4)
 
@@ -131,13 +152,30 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
 
     while loop_count < 3:
         if not user_pick_up:
+
+
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-            p.stdin.write('dialplan set global ext ' + ext + '\n')
-            p.stdin.write('dialplan set global currentRoomId ' + currentRoomId + '\n')
-            p.stdin.write('dialplan set global targetRoomId ' + targetRoomId + '\n')
+
+            if rid == "001":
+                print("try to dial from port 1")
+                #p.stdin.write('dialplan set global ext1 ' + ext + '\n')
+                p.stdin.write('dialplan set global currentRoomId1 ' + currentRoomId + '\n')
+                p.stdin.write('dialplan set global targetRoomId1 ' + targetRoomId + '\n')
+                #ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@context_001\n'
+                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + ' extension 200@context_001\n'               
+                robotExitString = "Robot1 pickup"
+            elif rid == "002":
+                print("try to dial from port 2")
+                #p.stdin.write('dialplan set global ext2 ' + ext + '\n')
+                p.stdin.write('dialplan set global currentRoomId2 ' + currentRoomId + '\n')
+                p.stdin.write('dialplan set global targetRoomId2 ' + targetRoomId + '\n')
+                #ss0 = 'channel originate DAHDI/4/' + ext + ' extension 200@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + ' extension 200@context_002\n'
+                robotExitString = "Robot2 pickup"
+
 
             # generate call
-            ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@from-internal\n'
+            
             print("==========================")
             print(ss0)
             p.stdin.write(ss0)
@@ -150,7 +188,7 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
                         print "Wait for dahdi channel resource!"
                         time.sleep(10)
                         break
-                    elif bool(re.search("KKUEI ext1", line)):
+                    elif bool(re.search(robotExitString, line)):
                         user_pick_up = True
                 else:  # Hungup
                     time.sleep(5)
