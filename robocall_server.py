@@ -23,7 +23,12 @@ sys.setdefaultencoding('utf-8')
 
 ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
-ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
+ROBOT1_LOG = '/home/advrobot/robocall_server_robot1_' + st + '.log'
+ROBOT1_BATTERY_LOG = '/home/advrobot/robocall_server_robot1_battery_' + st + '.log'
+ROBOT2_LOG = "/home/advrobot/robocall_server_robot2" + st + ".log"
+ROBOT2_BATTERY_LOG = "/home/advrobot/robocall_server_robot2_battery_" + st + ".log"
+
+
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
@@ -36,8 +41,10 @@ sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 # For Shang_Hai
 # ext_front_code = '6'
 # For Bei Jing
-ext_front_code = '32'
+ext_front_code = ''
 
+#reception
+reception_extension = ''
 
 # Jason phone
 Jason_phone = '0958331981'
@@ -80,7 +87,7 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                 p.stdin.write('dialplan set global pw2 ' + pw + '\n')
                 #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
                 #      + ' extension 100@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + str(int(roomId))\
+                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) + str(int(roomId))\
                   + ' extension 100@context_002\n'
                 robotExitString = "Robot2 pickup"
 
@@ -112,6 +119,9 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
             break
         else:
             pass
+
+        p.stdin.write('exit \n')
+        p.kill()
 
     if user_pick_up:
         print "Status: Completed"
@@ -159,16 +169,16 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
             if rid == "001":
                 print("try to dial from port 1")
                 #p.stdin.write('dialplan set global ext1 ' + ext + '\n')
-                p.stdin.write('dialplan set global currentRoomId1 ' + currentRoomId + '\n')
-                p.stdin.write('dialplan set global targetRoomId1 ' + targetRoomId + '\n')
+                p.stdin.write('dialplan set global robot1_currentRoomId ' + currentRoomId + '\n')
+                p.stdin.write('dialplan set global robot1_targetRoomId ' + targetRoomId + '\n')
                 #ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@context_001\n'
                 ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + ' extension 200@context_001\n'               
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 #p.stdin.write('dialplan set global ext2 ' + ext + '\n')
-                p.stdin.write('dialplan set global currentRoomId2 ' + currentRoomId + '\n')
-                p.stdin.write('dialplan set global targetRoomId2 ' + targetRoomId + '\n')
+                p.stdin.write('dialplan set global robot2_currentRoomId ' + currentRoomId + '\n')
+                p.stdin.write('dialplan set global robot2_targetRoomId ' + targetRoomId + '\n')
                 #ss0 = 'channel originate DAHDI/4/' + ext + ' extension 200@context_002\n'
                 ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + ' extension 200@context_002\n'
                 robotExitString = "Robot2 pickup"
@@ -203,6 +213,9 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
         else:
             pass
 
+        p.stdin.write('exit \n')
+        p.kill()
+
     p.stdin.close()
     p.stdout.close()
 
@@ -224,7 +237,7 @@ def box_not_closed(rid, roomId):
 
     print ("robotId :"+rid)
     print ("roomid :" + roomId)
-    while loop_count < 1:
+    while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
             #p.stdin.write('dialplan set global pw ' + pw + '\n')
@@ -237,16 +250,21 @@ def box_not_closed(rid, roomId):
             if rid == "001":
                 print("try to dial from port 1")
                 p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
-                p.stdin.write('dialplan set global room1Id ' + roomId + '\n')
+                p.stdin.write('dialplan set global robot1_roomId ' + roomId + '\n')
+                #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(reception_extension)\
+                #      + ' extension 300@context_001\n'
+
                 ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + str(int(roomId))\
-                      + ' extension 100@context_001\n'
+                      + ' extension 300@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
-                p.stdin.write('dialplan set global room2Id ' + roomId + '\n')
+                p.stdin.write('dialplan set global robot2_roomId ' + roomId + '\n')
+                #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(reception_extension)\
+                #      + ' extension 300@context_002\n'
                 ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + str(int(roomId))\
-                      + ' extension 100@context_002\n'
+                      + ' extension 300@context_002\n'
                 robotExitString = "Robot2 pickup"
             
             print("dial to :", ss0)
@@ -280,6 +298,9 @@ def box_not_closed(rid, roomId):
             break
         else:
             pass
+        
+        p.stdin.write('exit \n')
+        p.kill()
 
     #user_pick_up = True
 
@@ -326,20 +347,20 @@ def delivery_overtime(rid, roomId):
             # for testing roomId=141
             # roomId = str(141)
             if rid == "001":
-                p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
-                p.stdin.write('dialplan set global room1Id ' + roomId + '\n')
+                #p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
+                #p.stdin.write('dialplan set global robot1_roomId ' + roomId + '\n')
                 ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
-                      + ' extension 200@context_001\n'
+                      + ' extension 400@context_001\n'
                 #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
-                #      + ' extension 200@context_001\n'
+                #      + ' extension 400@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
-                p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
-                p.stdin.write('dialplan set global room2Id ' + roomId + '\n')
-                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) \
-                      + ' extension 200@context_002\n'
+                #p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
+                #p.stdin.write('dialplan set global robot2_roomId ' + roomId + '\n')
+                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
+                      + ' extension 400@context_002\n'
                 #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
-                #      + ' extension 200@context_002\n'
+                #      + ' extension 400@context_002\n'
                 robotExitString = "Robot2 pickup"
             print(ss0)
             p.stdin.write(ss0)
@@ -365,6 +386,9 @@ def delivery_overtime(rid, roomId):
             break
         else:
             pass
+
+            p.stdin.write('exit \n')
+            p.kill()
 
     if user_pick_up:
         print "Status: Completed"
@@ -417,10 +441,28 @@ class robocall_server(object):
         cherrypy.engine.exit()
 
     @cherrypy.expose
-    def logging(self, msg):
+    def logging(self, rid, msg):
+        global ROBOT1_LOG, ROBOT2_LOG
         logging.getLogger("cherrypy").propagate = False
-        logging.basicConfig(filename=ROBOCALL_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
-        logging.info(msg)
+        if rid == "001":
+            logging.basicConfig(filename=ROBOT1_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+            logging.info(msg)
+        elif rid == "002":
+            logging.basicConfig(filename=ROBOT2_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+            logging.info(msg)
+        
+
+    @cherrypy.expose
+    def batterylogging(self, rid, msg):
+        global ROBOT1_BATTERY_LOG, ROBOT2_BATTERY_LOG
+        logging.getLogger("cherrypy").propagate = False
+        if rid == "001":
+            logging.basicConfig(filename=ROBOT1_BATTERY_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+            logging.info(msg)
+        elif rid =="002":
+            logging.basicConfig(filename=ROBOT2_BATTERY_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+            logging.info(msg)
+        
 
     @cherrypy.expose
     def remove_car_req(self, rid, ext=1234, currentRoomId=2345, targetRoomId=3456):
