@@ -79,7 +79,7 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                 p.stdin.write('dialplan set global pw1 ' + pw + '\n')
                 #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
                 #      + ' extension 100@context_001\n'
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + str(int(roomId))\
+                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
                   + ' extension 100@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
@@ -87,7 +87,7 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                 p.stdin.write('dialplan set global pw2 ' + pw + '\n')
                 #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
                 #      + ' extension 100@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) + str(int(roomId))\
+                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
                   + ' extension 100@context_002\n'
                 robotExitString = "Robot2 pickup"
 
@@ -97,6 +97,7 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
             
             print(ss0)
             p.stdin.write(ss0)
+
             while True:
                 line = p.stdout.readline()
                 if re.search("Hungup", line) is None:
@@ -114,6 +115,12 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                         print "Hangup but not pressing 0... back to loop"
                     loop_count += 1
                     break
+
+            p.stdin.write('exit \n')
+            p.stdin.close()
+            p.stdout.close()
+            p.kill()
+
         elif user_pick_up:
             print "user_picp_up == True"
             break
@@ -168,7 +175,6 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
 
             if rid == "001":
                 print("try to dial from port 1")
-                #p.stdin.write('dialplan set global ext1 ' + ext + '\n')
                 p.stdin.write('dialplan set global robot1_currentRoomId ' + currentRoomId + '\n')
                 p.stdin.write('dialplan set global robot1_targetRoomId ' + targetRoomId + '\n')
                 #ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@context_001\n'
@@ -176,7 +182,6 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
-                #p.stdin.write('dialplan set global ext2 ' + ext + '\n')
                 p.stdin.write('dialplan set global robot2_currentRoomId ' + currentRoomId + '\n')
                 p.stdin.write('dialplan set global robot2_targetRoomId ' + targetRoomId + '\n')
                 #ss0 = 'channel originate DAHDI/4/' + ext + ' extension 200@context_002\n'
@@ -206,6 +211,11 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
                         print "Hangup but not pressing 1... back to loop"
                     loop_count += 1
                     break
+            
+            p.stdin.write('exit \n')
+            p.stdin.close()
+            p.stdout.close()
+            p.kill()
 
         elif user_pick_up:
             print "user_picp_up == True"
@@ -213,11 +223,7 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
         else:
             pass
 
-        p.stdin.write('exit \n')
-        p.kill()
-
-    p.stdin.close()
-    p.stdout.close()
+        
 
     if user_pick_up == True:
         return "Status: Completed"
@@ -240,10 +246,7 @@ def box_not_closed(rid, roomId):
     while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-            #p.stdin.write('dialplan set global pw ' + pw + '\n')
             
-            
-
             # for testing roomId=141
             # roomId = str(141)
             
@@ -251,19 +254,19 @@ def box_not_closed(rid, roomId):
                 print("try to dial from port 1")
                 p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
                 p.stdin.write('dialplan set global robot1_roomId ' + roomId + '\n')
-                #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(reception_extension)\
+                #ss0 = 'channel originate DAHDI/1/' + str(reception_extension)\
                 #      + ' extension 300@context_001\n'
 
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + str(int(roomId))\
+                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
                       + ' extension 300@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
                 p.stdin.write('dialplan set global robot2_roomId ' + roomId + '\n')
-                #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(reception_extension)\
+                #ss0 = 'channel originate DAHDI/4/' + str(reception_extension)\
                 #      + ' extension 300@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + str(int(roomId))\
+                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) \
                       + ' extension 300@context_002\n'
                 robotExitString = "Robot2 pickup"
             
@@ -290,6 +293,8 @@ def box_not_closed(rid, roomId):
                     break
             
             p.stdin.write('exit \n')
+            p.stdin.close()
+            p.stdout.close()
             p.kill()
             
 
@@ -299,8 +304,6 @@ def box_not_closed(rid, roomId):
         else:
             pass
         
-        p.stdin.write('exit \n')
-        p.kill()
 
     #user_pick_up = True
 
@@ -341,29 +344,25 @@ def delivery_overtime(rid, roomId):
     while loop_count < 3:
         if not user_pick_up:
             p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-            #p.stdin.write('dialplan set global pw ' + pw + '\n')
             
-
             # for testing roomId=141
             # roomId = str(141)
             if rid == "001":
-                #p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
-                #p.stdin.write('dialplan set global robot1_roomId ' + roomId + '\n')
                 ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
                       + ' extension 400@context_001\n'
                 #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
                 #      + ' extension 400@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
-                #p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
-                #p.stdin.write('dialplan set global robot2_roomId ' + roomId + '\n')
                 ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
                       + ' extension 400@context_002\n'
                 #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
                 #      + ' extension 400@context_002\n'
                 robotExitString = "Robot2 pickup"
+
             print(ss0)
             p.stdin.write(ss0)
+
             while True:
                 line = p.stdout.readline()
                 if re.search("Hungup", line) is None:
@@ -381,14 +380,19 @@ def delivery_overtime(rid, roomId):
                         print "Hangup but not pressing 0... back to loop"
                     loop_count += 1
                     break
+            
+            p.stdin.write('exit \n')
+            p.stdin.close()
+            p.stdout.close()
+            p.kill()
+
         elif user_pick_up:
             print "user_picp_up == True"
             break
         else:
             pass
 
-            p.stdin.write('exit \n')
-            p.kill()
+            
 
     if user_pick_up:
         print "Status: Completed"
