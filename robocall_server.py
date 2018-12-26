@@ -18,6 +18,7 @@ import atexit
 import time, datetime
 import collections
 import paho.mqtt.client as mqtt
+import logging.config
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -41,6 +42,72 @@ ext_front_code = '6'
 
 c = None
 conn = None
+
+LOG_CONF = {
+    'version': 1,
+
+    'formatters': {
+        'void': {
+            'format': ''
+        },
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': {
+        'default': {
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'formatter': 'standard',
+            'stream': 'ext://sys.stdout'
+        },
+        'cherrypy_console': {
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'formatter': 'void',
+            'stream': 'ext://sys.stdout'
+        },
+        'cherrypy_access': {
+            'level':'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'void',
+            'filename': 'access.log',
+            'maxBytes': 10485760,
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+        'cherrypy_error': {
+            'level':'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'void',
+            'filename': 'errors.log',
+            'maxBytes': 10485760,
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['default'],
+            'level': 'INFO'
+        },
+        'db': {
+            'handlers': ['default'],
+            'level': 'INFO' ,
+            'propagate': False
+        },
+        'cherrypy.access': {
+            'handlers': ['cherrypy_access'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'cherrypy.error': {
+            'handlers': ['cherrypy_console', 'cherrypy_error'],
+            'level': 'INFO',
+            'propagate': False
+        },
+    }
+}
 
 
 def robocall_reboot():
@@ -300,6 +367,7 @@ def mqtt_listener():
                      mb_abort_counter INTEGER);""")
     atexit.register(exit_handler)
     client.loop_forever()
+    
 
 if __name__ == '__main__':
 
@@ -309,4 +377,11 @@ if __name__ == '__main__':
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
+    cherrypy.config.update({'log.screen': True,
+                        'log.access_file': '',
+                        'log.error_file': ''})
+    logging.config.dictConfig(LOG_CONF)
     cherrypy.quickstart(robocall_server())
+
+
+    
