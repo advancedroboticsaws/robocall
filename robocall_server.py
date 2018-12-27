@@ -31,6 +31,7 @@ ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 ROBOCALL_IP = '192.168.65.100'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
+log_path = "/home/advrobot/robocall/log/"
 
 # For Office
 # ext_front_code = ''
@@ -42,72 +43,6 @@ ext_front_code = '6'
 
 c = None
 conn = None
-
-LOG_CONF = {
-    'version': 1,
-
-    'formatters': {
-        'void': {
-            'format': ''
-        },
-        'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
-    },
-    'handlers': {
-        'default': {
-            'level':'INFO',
-            'class':'logging.StreamHandler',
-            'formatter': 'standard',
-            'stream': 'ext://sys.stdout'
-        },
-        'cherrypy_console': {
-            'level':'INFO',
-            'class':'logging.StreamHandler',
-            'formatter': 'void',
-            'stream': 'ext://sys.stdout'
-        },
-        'cherrypy_access': {
-            'level':'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'void',
-            'filename': 'access.log',
-            'maxBytes': 10485760,
-            'backupCount': 20,
-            'encoding': 'utf8'
-        },
-        'cherrypy_error': {
-            'level':'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'formatter': 'void',
-            'filename': 'errors.log',
-            'maxBytes': 10485760,
-            'backupCount': 20,
-            'encoding': 'utf8'
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['default'],
-            'level': 'INFO'
-        },
-        'db': {
-            'handlers': ['default'],
-            'level': 'INFO' ,
-            'propagate': False
-        },
-        'cherrypy.access': {
-            'handlers': ['cherrypy_access'],
-            'level': 'INFO',
-            'propagate': False
-        },
-        'cherrypy.error': {
-            'handlers': ['cherrypy_console', 'cherrypy_error'],
-            'level': 'INFO',
-            'propagate': False
-        },
-    }
-}
 
 
 def robocall_reboot():
@@ -266,6 +201,8 @@ class robocall_server(object):
         logging.getLogger("cherrypy").propagate = False
         logging.basicConfig(filename=ROBOCALL_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
         logging.info(msg)
+        
+
 
     @cherrypy.expose
     def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
@@ -371,16 +308,21 @@ def mqtt_listener():
 
 if __name__ == '__main__':
 
+    
     mqtt_logging_thread = threading.Thread(target=mqtt_listener)
     mqtt_logging_thread.start()
 
+    time = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    if not (os.path.exists(log_path + time)):
+        print "path no exists"
+        os.makedirs(os.path.join(log_path + time))
+        
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
     cherrypy.config.update({'log.screen': True,
-                        'log.access_file': '',
-                        'log.error_file': ''})
-    logging.config.dictConfig(LOG_CONF)
+                        'log.access_file':os.path.join(log_path,time,st+"_access.log"),
+                        'log.error_file': os.path.join(log_path,time,st+"_errors.log")})
     cherrypy.quickstart(robocall_server())
 
 
