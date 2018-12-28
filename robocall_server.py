@@ -312,17 +312,17 @@ if __name__ == '__main__':
     mqtt_logging_thread = threading.Thread(target=mqtt_listener)
     mqtt_logging_thread.start()
 
-    time = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
-    if not (os.path.exists(log_path + time)):
+    time_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    if not (os.path.exists(log_path + time_str)):
         print "path no exists"
-        os.makedirs(os.path.join(log_path + time))
+        os.makedirs(os.path.join(log_path + time_str))
         
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
     cherrypy.config.update({'log.screen': True,
-                        'log.access_file':os.path.join(log_path,time,st+"_access.log"),
-                        'log.error_file': os.path.join(log_path,time,st+"_errors.log")})
+                        'log.access_file':os.path.join(log_path,time_str,st+"_access.log"),
+                        'log.error_file': os.path.join(log_path,time_str,st+"_errors.log")})
     cherrypy.quickstart(robocall_server())
 
 
