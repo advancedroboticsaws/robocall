@@ -26,6 +26,7 @@ ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
 ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
+ROBOCALL_BATT_LOG = '/home/advrobot/robocall_server_battery.log'
 
 # ROBOCALL_IP = '192.168.30.132'
 ROBOCALL_IP = '192.168.65.100'
@@ -199,10 +200,14 @@ class robocall_server(object):
     @cherrypy.expose
     def logging(self, msg):
         logging.getLogger("cherrypy").propagate = False
-        logging.basicConfig(filename=ROBOCALL_LOG,format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+        logging.basicConfig(filename=ROBOCALL_LOG, format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
         logging.info(msg)
-        
 
+    @cherrypy.expose
+    def logging_bat(self, msg):
+        logging.getLogger("cherrypy").propagate = False
+        logging.basicConfig(filename=ROBOCALL_BATT_LOG, format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
+        logging.info(msg)
 
     @cherrypy.expose
     def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
