@@ -29,23 +29,40 @@ ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 ROBOCALL_BATT_LOG = '/home/advrobot/robocall_server_battery.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.65.100'
+ROBOCALL_IP = '192.168.30.102'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 log_path = "/home/advrobot/robocall/log/"
 
 # For Office
-# ext_front_code = ''
+ext_front_code = ''
 # For Shang_Hai
-ext_front_code = '6'
-# For Bei Jing
+# ext_front_code = '6'
+# For Beijing, WestLake
 # ext_front_code = ''
 
 
 c = None
 conn = None
 
+# ===========================================================
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
 
+
+def setup_logger(name, log_file, level=logging.INFO):
+    """Function setup as many loggers as you want"""
+
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
+
+# ===========================================================
 def robocall_reboot():
     time.sleep(3.0)
     os.system('sync;sync;')
@@ -199,15 +216,17 @@ class robocall_server(object):
 
     @cherrypy.expose
     def logging(self, msg):
-        logging.getLogger("cherrypy").propagate = False
-        logging.basicConfig(filename=ROBOCALL_LOG, format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
-        logging.info(msg)
+        # logging.getLogger("cherrypy").propagate = False
+        # logging.basicConfig(filename=ROBOCALL_LOG, format='%(asctime)s %(levelname)s: %(message)s',level=logging.DEBUG)
+        # logging.info(msg)
+        task_logger.info(msg)
 
     @cherrypy.expose
     def logging_bat(self, msg):
-        logging.getLogger("cherrypy").propagate = False
-        logging.basicConfig(filename=ROBOCALL_BATT_LOG, format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
-        logging.info(msg)
+        # logging.getLogger("cherrypy").propagate = False
+        # logging.basicConfig(filename=ROBOCALL_BATT_LOG, format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG)
+        # logging.info(msg)
+        batt_logger.info(msg)
 
     @cherrypy.expose
     def remove_car_req(self, ext=1234, currentRoomId=2345, targetRoomId=3456):
@@ -312,10 +331,15 @@ def mqtt_listener():
     
 
 if __name__ == '__main__':
+    # mqtt_logging_thread = threading.Thread(target=mqtt_listener)
+    # mqtt_logging_thread.start()
+    # first file logger
+    task_logger = setup_logger('ROBOCALL_LOG', ROBOCALL_LOG)
+    task_logger.info('System Start up.')
 
-    
-    mqtt_logging_thread = threading.Thread(target=mqtt_listener)
-    mqtt_logging_thread.start()
+    # second file logger
+    batt_logger = setup_logger('ROBOCALL_BATT_LOG', ROBOCALL_BATT_LOG)
+    batt_logger.info('System Start up.')
 
     time_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     if not (os.path.exists(log_path + time_str)):
