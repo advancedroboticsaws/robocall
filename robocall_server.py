@@ -29,17 +29,17 @@ ROBOCALL_LOG = '/home/advrobot/robocall_server_' + st + '.log'
 ROBOCALL_BATT_LOG = '/home/advrobot/robocall_server_battery.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.30.102'
+ROBOCALL_IP = '192.168.64.10'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 log_path = "/home/advrobot/robocall/log/"
 
 # For Office
-ext_front_code = ''
+# ext_front_code = ''
 # For Shang_Hai
 # ext_front_code = '6'
 # For Beijing, WestLake
-# ext_front_code = ''
+ext_front_code = ''
 
 
 c = None
@@ -335,11 +335,11 @@ if __name__ == '__main__':
     # mqtt_logging_thread.start()
     # first file logger
     task_logger = setup_logger('ROBOCALL_LOG', ROBOCALL_LOG)
-    task_logger.info('System Start up.')
+    task_logger.info('TASK Logging System Start up.')
 
     # second file logger
     batt_logger = setup_logger('ROBOCALL_BATT_LOG', ROBOCALL_BATT_LOG)
-    batt_logger.info('System Start up.')
+    batt_logger.info('Battery Logging System Start up.')
 
     time_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     if not (os.path.exists(log_path + time_str)):
