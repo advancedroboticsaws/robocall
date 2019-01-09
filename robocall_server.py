@@ -32,7 +32,7 @@ ROBOT2_BATTERY_LOG = "/home/advrobot/robocall_server_robot2_battery_" + st + ".l
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.64.10'
+ROBOCALL_IP = '192.168.30.28'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
@@ -100,6 +100,48 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
 
             while True:
                 line = p.stdout.readline()
+                #print "line :",line
+                if rid == "001":
+                    if re.search("Hungup 'DAHDI/1-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/1\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+                elif rid == "002":
+                    if re.search("Hungup 'DAHDI/4-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/4\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+            '''
+            while True:
+                line = p.stdout.readline()
                 if re.search("Hungup", line) is None:
                     print(line.rstrip())
                     if bool(re.search("NOTICE", line)):
@@ -115,14 +157,14 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
                         print "Hangup but not pressing 0... back to loop"
                     loop_count += 1
                     break
-
+            '''
             p.stdin.write('exit \n')
             p.stdin.close()
             p.stdout.close()
             p.kill()
 
         elif user_pick_up:
-            print "user_picp_up == True"
+            print "("+rid+")"+"user_picp_up == True"
             break
         else:
             pass
@@ -177,15 +219,15 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
                 print("try to dial from port 1")
                 p.stdin.write('dialplan set global robot1_currentRoomId ' + currentRoomId + '\n')
                 p.stdin.write('dialplan set global robot1_targetRoomId ' + targetRoomId + '\n')
-                #ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@context_001\n'
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + ' extension 200@context_001\n'               
+                ss0 = 'channel originate DAHDI/1/' + ext + ' extension 200@context_001\n'
+                #ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) + ' extension 200@context_001\n'               
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 p.stdin.write('dialplan set global robot2_currentRoomId ' + currentRoomId + '\n')
                 p.stdin.write('dialplan set global robot2_targetRoomId ' + targetRoomId + '\n')
-                #ss0 = 'channel originate DAHDI/4/' + ext + ' extension 200@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + ' extension 200@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + ext + ' extension 200@context_002\n'
+                #ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) + ' extension 200@context_002\n'
                 robotExitString = "Robot2 pickup"
 
 
@@ -197,20 +239,70 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
 
             while True:
                 line = p.stdout.readline()
+                #print "line :",line
+                if rid == "001":
+                    if re.search("Hungup 'DAHDI/1-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/1\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+                elif rid == "002":
+                    if re.search("Hungup 'DAHDI/4-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/4\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+                '''
                 if re.search("Hungup", line) is None:
                     print(line.rstrip())
                     if bool(re.search("NOTICE", line)):
+                        print "msg: ","("+rid+")" + line
                         print "Wait for dahdi channel resource!"
                         time.sleep(10)
                         break
                     elif bool(re.search(robotExitString, line)):
                         user_pick_up = True
                 else:  # Hungup
-                    time.sleep(5)
-                    if not user_pick_up:
-                        print "Hangup but not pressing 1... back to loop"
-                    loop_count += 1
-                    break
+                    print "Hungup :","("+rid+")" + line
+                    if (rid == "001") and (line.find("DAHDI/1-1") != -1):                  
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 1... back to loop"
+                        loop_count += 1
+                        break
+                    elif (rid == "002") and (line.find("DAHDI/4-1") != -1):
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 1... back to loop"
+                        loop_count += 1
+                        break
+                '''
+                    
             
             p.stdin.write('exit \n')
             p.stdin.close()
@@ -218,7 +310,7 @@ def remove_call(rid ,user_pick_up, ext, currentRoomId, targetRoomId):
             p.kill()
 
         elif user_pick_up:
-            print "user_picp_up == True"
+            print "("+rid+")"+"user_picp_up == True"
             break
         else:
             pass
@@ -273,7 +365,49 @@ def box_not_closed(rid, roomId):
             print("dial to :", ss0)
             p.stdin.write(ss0)
             
+
+            while True:
+                line = p.stdout.readline()
+                #print "line :",line
+                if rid == "001":
+                    if re.search("Hungup 'DAHDI/1-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/1\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+                elif rid == "002":
+                    if re.search("Hungup 'DAHDI/4-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/4\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
             
+            '''
             while True:
                 line = p.stdout.readline()
                 if re.search("Hungup", line) is None:
@@ -291,7 +425,7 @@ def box_not_closed(rid, roomId):
                         print "Hangup but not pressing 0... back to loop"
                     loop_count += 1
                     break
-            
+            '''
             p.stdin.write('exit \n')
             p.stdin.close()
             p.stdout.close()
@@ -299,7 +433,7 @@ def box_not_closed(rid, roomId):
             
 
         elif user_pick_up:
-            print "user_picp_up == True"
+            print "("+rid+")"+"user_picp_up == True"
             break
         else:
             pass
@@ -365,6 +499,48 @@ def delivery_overtime(rid, roomId):
 
             while True:
                 line = p.stdout.readline()
+                #print "line :",line
+                if rid == "001":
+                    if re.search("Hungup 'DAHDI/1-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/1\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+                elif rid == "002":
+                    if re.search("Hungup 'DAHDI/4-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/4\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString, line)):
+                            user_pick_up = True
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+            '''
+            while True:
+                line = p.stdout.readline()
                 if re.search("Hungup", line) is None:
                     print(line.rstrip())
                     if bool(re.search("NOTICE", line)):
@@ -380,14 +556,14 @@ def delivery_overtime(rid, roomId):
                         print "Hangup but not pressing 0... back to loop"
                     loop_count += 1
                     break
-            
+            '''
             p.stdin.write('exit \n')
             p.stdin.close()
             p.stdout.close()
             p.kill()
 
         elif user_pick_up:
-            print "user_picp_up == True"
+            print "("+rid+")"+"user_picp_up == True"
             break
         else:
             pass
