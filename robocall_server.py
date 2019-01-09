@@ -41,15 +41,15 @@ sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 # For Shang_Hai
 # ext_front_code = '6'
 # For Bei Jing
-ext_front_code = ''
+ext_front_code = '0'
 
 #reception
 reception_extension = ''
 
 # Jason phone
-Jason_phone = '0958331981'
+#Jason_phone = '0958331981'
 # Jimmy phone
-Jimmy_phone = '0921842654'
+#Jimmy_phone = '0921842654'
 
 
 
@@ -77,18 +77,18 @@ def delivery_call(rid ,user_pick_up, roomId, pw):
             if rid == "001":
                 print("try to dial from port 1")
                 p.stdin.write('dialplan set global pw1 ' + pw + '\n')
-                #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
-                #      + ' extension 100@context_001\n'
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
-                  + ' extension 100@context_001\n'
+                ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 100@context_001\n'
+                #ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
+                #  + ' extension 100@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 p.stdin.write('dialplan set global pw2 ' + pw + '\n')
-                #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
-                #      + ' extension 100@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
-                  + ' extension 100@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 100@context_002\n'
+                #ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
+                #  + ' extension 100@context_002\n'
                 robotExitString = "Robot2 pickup"
 
                         
@@ -346,20 +346,20 @@ def box_not_closed(rid, roomId):
                 print("try to dial from port 1")
                 p.stdin.write('dialplan set global robot1Id ' + robotId + '\n')
                 p.stdin.write('dialplan set global robot1_roomId ' + roomId + '\n')
-                #ss0 = 'channel originate DAHDI/1/' + str(reception_extension)\
-                #      + ' extension 300@context_001\n'
-
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
+                ss0 = 'channel originate DAHDI/1/' + str(reception_extension)\
                       + ' extension 300@context_001\n'
+
+                #ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
+                #      + ' extension 300@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
                 print("try to dial from port 2")
                 p.stdin.write('dialplan set global robot2Id ' + robotId + '\n')
                 p.stdin.write('dialplan set global robot2_roomId ' + roomId + '\n')
-                #ss0 = 'channel originate DAHDI/4/' + str(reception_extension)\
-                #      + ' extension 300@context_002\n'
-                ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) \
+                ss0 = 'channel originate DAHDI/4/' + str(reception_extension)\
                       + ' extension 300@context_002\n'
+                #ss0 = 'channel originate DAHDI/4/' + str(Jimmy_phone) \
+                #      + ' extension 300@context_002\n'
                 robotExitString = "Robot2 pickup"
             
             print("dial to :", ss0)
@@ -482,16 +482,16 @@ def delivery_overtime(rid, roomId):
             # for testing roomId=141
             # roomId = str(141)
             if rid == "001":
-                ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
-                      + ' extension 400@context_001\n'
-                #ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                #ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
                 #      + ' extension 400@context_001\n'
+                ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 400@context_001\n'
                 robotExitString = "Robot1 pickup"
             elif rid == "002":
-                ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
-                      + ' extension 400@context_002\n'
-                #ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
+                #ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
                 #      + ' extension 400@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 400@context_002\n'
                 robotExitString = "Robot2 pickup"
 
             print(ss0)
