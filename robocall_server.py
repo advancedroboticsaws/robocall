@@ -12,12 +12,16 @@ import sys, subprocess, re
 import logging
 from subprocess import Popen, PIPE, STDOUT
 from pushy import PushyAPI
-from json import loads
+from json import loads, dumps
 import sqlite3
 import atexit
 import time, datetime
 import collections
 import paho.mqtt.client as mqtt
+from comm.mqtt_template import MQTT_OBJ
+from comm.global_logger import logger
+import signal
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -32,7 +36,7 @@ ROBOT2_BATTERY_LOG = "/home/advrobot/robocall_server_robot2_battery_" + st + ".l
 # ROBOCALL_LOG = '/home/kkuei/robocall_server.log'
 
 # ROBOCALL_IP = '192.168.30.132'
-ROBOCALL_IP = '192.168.30.28'
+ROBOCALL_IP = '192.168.30.101'
 
 sqlite_file = '/home/advrobot/amr_status_db.sqlite'
 
@@ -51,6 +55,7 @@ reception_extension = ''
 # Jimmy phone
 #Jimmy_phone = '0921842654'
 
+mqtt_agent = None
 
 
 c = None
@@ -595,6 +600,143 @@ def delivery_overtime(rid, roomId):
         return "Status: Expired"
     '''
 
+def delivery_overtime_cancel_call(rid, roomId):
+    loop_count = 0
+    # ignore calling
+    user_pick_up = False
+    robotId = str(rid)
+    roomId = str(roomId)
+    robotExitString = ""
+
+
+    while loop_count < 3:
+        if not user_pick_up:
+            p = subprocess.Popen('asterisk -rvvvvv', shell=True, stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+            
+            # for testing roomId=141
+            # roomId = str(141)
+            if rid == "001":
+                #ss0 = 'channel originate DAHDI/1/' + str(Jimmy_phone) \
+                #      + ' extension 401@context_001\n'
+                ss0 = 'channel originate DAHDI/1/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 401@context_001\n'
+                robotExitString = "Robot1 pickup"
+            elif rid == "002":
+                #ss0 = 'channel originate DAHDI/4/' + str(Jason_phone) \
+                #      + ' extension 401@context_002\n'
+                ss0 = 'channel originate DAHDI/4/' + str(ext_front_code) + str(int(roomId))\
+                      + ' extension 401@context_002\n'
+                robotExitString = "Robot2 pickup"
+
+            print(ss0)
+            p.stdin.write(ss0)
+
+            while True:
+                line = p.stdout.readline()
+                print "line :",line
+                if rid == "001":
+                    if re.search("Hungup 'DAHDI/1-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/1\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString +":keep waiting", line)):
+                            user_pick_up = True
+                            mqtt_response_cancel_job(rid , "continue")
+                        elif bool(re.search(robotExitString +":cancel job", line)):
+                            user_pick_up = True
+                            mqtt_response_cancel_job(rid , "cancel")
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+                elif rid == "002":
+                    if re.search("Hungup 'DAHDI/4-1'", line) is None:
+                        print(line.rstrip())
+                        if bool(re.search("NOTICE", line)):
+                            if bool(re.search(r"DAHDI\/4\/[0-9]+", line)):
+                                print "msg: ","("+rid+")" + line
+                                print "("+rid+")"+"Wait for dahdi channel resource!"
+                                time.sleep(10)
+                                break
+                        elif bool(re.search(robotExitString +":keep waiting", line)):
+                            user_pick_up = True
+                            mqtt_response_cancel_job(rid , "continue")
+                        elif bool(re.search(robotExitString +":cancel job", line)):
+                            user_pick_up = True
+                            mqtt_response_cancel_job(rid , "cancel")
+                    else:  # Hungup
+                        print "Hungup :","("+rid+")" + line
+                        time.sleep(5)
+                        if not user_pick_up:
+                            print "("+rid+")"+"Hangup but not pressing 0... back to loop"
+                        loop_count += 1
+                        break
+
+            '''
+            while True:
+                line = p.stdout.readline()
+                if re.search("Hungup", line) is None:
+                    print(line.rstrip())
+                    if bool(re.search("NOTICE", line)):
+                        print "Wait for dahdi channel resource!"
+                        time.sleep(10)
+                        break
+                    elif bool(re.search(robotExitString, line)):
+                        print("find pickup msg!!!: "+robotExitString)
+                        user_pick_up = True
+                else:  # print "Hungup"
+                    time.sleep(5)
+                    if not user_pick_up:
+                        print "Hangup but not pressing 0... back to loop"
+                    loop_count += 1
+                    break
+            '''
+            p.stdin.write('exit \n')
+            p.stdin.close()
+            p.stdout.close()
+            p.kill()
+
+        elif user_pick_up:
+            print "("+rid+")"+"user_picp_up == True"
+            break
+        else:
+            pass
+
+            
+
+    if user_pick_up:
+        print "Status: Completed"
+        return "Status: Completed"
+    else:
+        print "Status: Expired"
+        return "Status: Expired"
+
+    '''
+    elif not user_pick_up:
+        print("request push notification!")
+
+        # push notification
+        s = requests.Session()
+        a = {'msg': '机器人送行李到' + str(roomId) + '却无人接听'}
+        announceMsg1 = urllib.urlencode(a)
+        uri = str('http://' + ROBOCALL_IP + ':8080/push?' + announceMsg1)
+
+        try:
+            r = s.get(uri)
+        except:
+            print("[robocall] push notification failure")
+
+        return "Status: Expired"
+    '''
+
 class robocall_server(object):
     push_token=[]
 
@@ -688,6 +830,14 @@ class robocall_server(object):
 	return "robocall_received_inform_task"
 
     @cherrypy.expose
+    def delivery_overtime_cancel_call_req(self ,rid = 0 ,roomId= 0 ):
+
+	    call_thread = threading.Thread(target=delivery_overtime_cancel_call, args=(rid, roomId))
+	    call_thread.start()	
+	    print("robocall_received_inform_task")
+	    return "robocall_received_inform_task"
+
+    @cherrypy.expose
     def reboot(self, robot_id=0, tid=0, pw=0):
         # Reboot robocall by AMR.
         if pw == 'robocall_server':
@@ -764,12 +914,29 @@ def mqtt_listener():
     atexit.register(exit_handler)
     client.loop_forever()
 
+def mqtt_response_cancel_job(rid ,cmd):
+    print "("+rid+"):"+cmd
+    msg = {'rid':rid, 'cmd':cmd}
+    mqtt_publish(dumps(msg))
+    
+
+def mqtt_publish(payload_str):
+    mqtt_agent.publish(topic='cancelJob', payload=payload_str, qos=2, retain=False)
+
+
+
 if __name__ == '__main__':
+
 
     mqtt_logging_thread = threading.Thread(target=mqtt_listener)
     mqtt_logging_thread.start()
+
+    mqtt_agent = MQTT_OBJ(client_id="robocall_server", broker_ip=ROBOCALL_IP,
+        port=1883, keepalive=10, clean_session=False,logger =logger)
 
     # Cherrypy Server
     cherrypy.server.socket_host = '0.0.0.0'
     cherrypy.server.thread_pool = 10
     cherrypy.quickstart(robocall_server())
+
+
